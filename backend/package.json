@@ -13,13 +13,17 @@
     "@types/jest": "^30",
     "@types/node": "^24.10.1",
     "aws-cdk": "2.1138.0",
+    "esbuild": "^0.28.2",
     "jest": "^30",
     "tsx": "^4.23.0",
     "typescript": "~7.0.2"
   },
   "dependencies": {
     "@aws-cdk/aws-appsync-alpha": "^2.59.0-alpha.0",
+    "@aws-sdk/client-dynamodb": "^3.1116.0",
+    "@aws-sdk/lib-dynamodb": "^3.1116.0",
     "aws-cdk-lib": "^2.265.0",
-    "constructs": "^10.5.0"
+    "constructs": "^10.5.0",
+    "ulid": "^3.0.2"
   }
 }

@@ -3,6 +3,8 @@ import { Construct } from 'constructs';
 import * as dynamodb from 'aws-cdk-lib/aws-dynamodb';
 import * as appsync from '@aws-cdk/aws-appsync-alpha';
 import * as path from 'path';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
+import * as lambdaNodejs from 'aws-cdk-lib/aws-lambda-nodejs';
 
 // import * as sqs from 'aws-cdk-lib/aws-sqs';
 
@@ -17,6 +19,7 @@ export class BackendStack extends cdk.Stack {
     //   visibilityTimeout: cdk.Duration.seconds(300)
     // });
 
+    //Creacion de la base de datos
     const notesTable = new dynamodb.Table(this, 'NotesTable', {
       tableName: 'Notes',
       partitionKey: {
@@ -56,28 +59,26 @@ export class BackendStack extends cdk.Stack {
     //Union entre el dynamoDB y el GraphQL
     const notesDataSource = api.addDynamoDbDataSource('NotesDataSource', notesTable);
 
-    //El comando para crear una Nota en el DynamoDB
-    notesDataSource.createResolver('CreateNoteResolver', {
-      typeName: 'Mutation',
-      fieldName: 'createNote',
-      requestMappingTemplate: appsync.MappingTemplate.fromString(`
-        {
-          "version": "2018-05-29",
-          "operation": "PutItem",
-          "key": {
-            "id": $util.dynamodb.toDynamoDBJson($util.autoId())
-          },
-          "attributeValues": {
-            "text": $util.dynamodb.toDynamoDBJson($ctx.args.text),
-            "sentiment": $util.dynamodb.toDynamoDBJson($ctx.args.sentiment),
-            "dateCreated": $util.dynamodb.toDynamoDBJson($util.time.nowISO8601())
-          }
-        }
-      `),
-      responseMappingTemplate: appsync.MappingTemplate.fromString(`$util.toJson($ctx.result)`),
+    // Lambda para crear el resolver y generar el ULID de mejor manera en otro codigo
+    const createNoteFn = new lambdaNodejs.NodejsFunction(this, 'CreateNoteFn', {
+      entry: path.join(__dirname, 'lambda/createNote.ts'),
+      runtime: lambda.Runtime.NODEJS_20_X,
+      environment: {
+        TABLE_NAME: notesTable.tableName,
+      },
     });
 
-    //Obtener las notas por bloques
+    //Le mando a llamar que para escribir datos use la funcion de createNoteFn
+    notesTable.grantWriteData(createNoteFn);
+    
+    const lambdaDataSource = api.addLambdaDataSource('CreateNoteDataSource', createNoteFn);
+
+    lambdaDataSource.createResolver('CreateNoteResolver', {
+      typeName: 'Mutation',
+      fieldName: 'createNote',
+    });
+
+    //Resolver para obtener las notas (No lo creo en una lambda porque pues, es sencillo)
     notesDataSource.createResolver('GetNotesResolver', {
       typeName: 'Query',
       fieldName: 'getNotes',
