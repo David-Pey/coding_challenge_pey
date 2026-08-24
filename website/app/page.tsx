@@ -23,6 +23,7 @@ export default function Home() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [nextToken, setNextToken] = useState<string | null>(null);
 
+  //Funcion para obtener las primeras 10 notas
   async function loadNotes() {
     setFetching(true);
     try {
@@ -36,6 +37,7 @@ export default function Home() {
     }
   }
 
+  //Funcion para obtener mas notas si es que hace falta
   async function loadMore() {
     if (!nextToken) return;
 
@@ -55,6 +57,7 @@ export default function Home() {
     loadNotes();
   }, []);
 
+  //Mandar una nueva nota al GraphQL
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!text.trim()) return;
