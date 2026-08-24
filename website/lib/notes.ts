@@ -1,7 +1,13 @@
+/*
+    Archivo para guardar nuevas notas y obtenerlas  
+*/
+//Exporto cliente
 import { graphqlClient } from './graphql-client';
 
+//Defino lista de snetimientos
 export type Sentiment = 'happy' | 'sad' | 'neutral' | 'angry';
 
+//Defino la interface de que compone una nota
 export interface Note {
   id: string;
   text: string;
@@ -9,13 +15,14 @@ export interface Note {
   dateCreated: string;
 }
 
+//Definicion del resultado del query
 interface NoteQueryResults {
   items: Note[];
   nextToken: string | null;
   scannedCount: number;
 }
 
-// --- createNote ---
+// Texto del Query para crear la nota
 const CREATE_NOTE = `
   mutation CreateNote($text: String!, $sentiment: Sentiment!) {
     createNote(text: $text, sentiment: $sentiment) {
@@ -27,6 +34,7 @@ const CREATE_NOTE = `
   }
 `;
 
+//Función asincrona para crear la nota
 export async function createNote(text: string, sentiment: Sentiment): Promise<Note> {
   const data = await graphqlClient.request<{ createNote: Note }>(CREATE_NOTE, {
     text,
@@ -35,7 +43,7 @@ export async function createNote(text: string, sentiment: Sentiment): Promise<No
   return data.createNote;
 }
 
-// --- getNotes ---
+// Texto del Query para obtener las notas
 const GET_NOTES = `
   query GetNotes($sentiment: Sentiment, $limit: Int, $nextToken: String) {
     getNotes(sentiment: $sentiment, limit: $limit, nextToken: $nextToken) {
